@@ -9,6 +9,7 @@ This repository contains a Docker image designed to provide a ready-to-use envir
   - [Features](#features)
   - [Usage in pipelines](#usage-in-pipelines)
   - [Building locally](#building-locally)
+  - [Building locally with example](#building-locally-with-example)
 
 ---
 
@@ -49,4 +50,12 @@ jobs:
 docker build -t moabukar/terragrunt-image:latest .
 
 docker run --rm -v $PWD:/workspace moabukar/terragrunt-image terragrunt plan
+```
+
+## Building locally with example
+
+```sh
+cd examples/terragrunt
+
+docker run --rm -v $(pwd):/cicd -v $(pwd)/../terraform:/terraform -w /cicd moabukar/terragrunt-image terragrunt init
 ```
