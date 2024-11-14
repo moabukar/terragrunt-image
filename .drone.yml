@@ -2,9 +2,6 @@ kind: pipeline
 type: docker
 name: terragrunt-image
 
-platform:
-  arch: arm64
-
 steps:
   - name: checkout
     image: alpine/git
@@ -13,8 +10,7 @@ steps:
       - git checkout ${DRONE_COMMIT}
 
   - name: build-and-publish
-    image: docker:20.10.16-dind
-    privileged: true
+    image: gcr.io/kaniko-project/executor:latest
     environment:
       DOCKER_USERNAME:
         from_secret: docker_username
@@ -22,23 +18,18 @@ steps:
         from_secret: dockerhub_token
       REGISTRY: moabukar
     commands:
-      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - echo "{\"auths\":{\"https://index.docker.io/v1/\":{\"username\":\"$DOCKER_USERNAME\",\"password\":\"$DOCKER_PASSWORD\"}}}" > /kaniko/.docker/config.json
       - sha=$(echo ${DRONE_COMMIT_SHA} | cut -c1-7)
       - primary_tag="${REGISTRY}/terragrunt-image:${sha}"
-      # Start Docker daemon
-      - dockerd-entrypoint.sh & sleep 5
-      # Build and push image with commit SHA tag
-      - docker build -t $primary_tag -f Dockerfile .
-      - docker push $primary_tag
+      # Build and push image with kaniko
+      - /kaniko/executor --context . --dockerfile Dockerfile --destination $primary_tag
       # Tag and push based on branch
       - if [ "${DRONE_BRANCH}" = "main" ]; then
           retention_tag="${REGISTRY}/terragrunt-image:latest";
-          docker tag $primary_tag $retention_tag;
-          docker push $retention_tag;
+          /kaniko/executor --context . --dockerfile Dockerfile --destination $retention_tag;
         else
           retention_tag="${REGISTRY}/terragrunt-image:${DRONE_BRANCH}-${sha}";
-          docker tag $primary_tag $retention_tag;
-          docker push $retention_tag;
+          /kaniko/executor --context . --dockerfile Dockerfile --destination $retention_tag;
         fi
 
 trigger:
