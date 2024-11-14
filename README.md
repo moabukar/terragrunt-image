@@ -41,7 +41,12 @@ jobs:
 
       - name: Run Terragrunt plan
         run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace moabukar/terragrunt-image terragrunt plan
+          docker run --rm \
+            -v ${{ github.workspace }}/examples/terragrunt:/cicd \
+            -v ${{ github.workspace }}/examples/terraform:/terraform \
+            -w /cicd \
+            moabukar/terragrunt-image terragrunt plan
+
 ```
 
 ## Building locally
@@ -58,4 +63,6 @@ docker run --rm -v $PWD:/workspace moabukar/terragrunt-image terragrunt plan
 cd examples/terragrunt
 
 docker run --rm -v $(pwd):/cicd -v $(pwd)/../terraform:/terraform -w /cicd moabukar/terragrunt-image terragrunt init
+
+docker run --rm -v $(pwd):/cicd -v $(pwd)/../terraform:/terraform -w /cicd moabukar/terragrunt-image terragrunt plan
 ```
