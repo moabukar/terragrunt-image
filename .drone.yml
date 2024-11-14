@@ -1,6 +1,10 @@
 kind: pipeline
-type: docker
+# type: docker
 name: terragrunt-image
+
+platform:
+  # os: linux
+  arch: arm64
 
 steps:
   - name: checkout
