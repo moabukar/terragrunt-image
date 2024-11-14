@@ -3,7 +3,6 @@ type: docker
 name: terragrunt-image
 
 platform:
-  # os: linux
   arch: arm64
 
 steps:
@@ -13,28 +12,24 @@ steps:
       - git clone https://github.com/moabukar/terragrunt-image.git
       - git checkout ${DRONE_COMMIT}
 
-  - name: login
-    image: docker
+  - name: build-and-publish
+    image: docker:20.10.16-dind
+    privileged: true
     environment:
       DOCKER_USERNAME:
         from_secret: docker_username
       DOCKER_PASSWORD:
         from_secret: dockerhub_token
-    commands:
-      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-
-  - name: build-and-publish
-    image: docker
-    environment:
       REGISTRY: moabukar
     commands:
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
       - sha=$(echo ${DRONE_COMMIT_SHA} | cut -c1-7)
       - primary_tag="${REGISTRY}/terragrunt-image:${sha}"
-      
+      # Start Docker daemon
+      - dockerd-entrypoint.sh & sleep 5
       # Build and push image with commit SHA tag
       - docker build -t $primary_tag -f Dockerfile .
       - docker push $primary_tag
-
       # Tag and push based on branch
       - if [ "${DRONE_BRANCH}" = "main" ]; then
           retention_tag="${REGISTRY}/terragrunt-image:latest";
