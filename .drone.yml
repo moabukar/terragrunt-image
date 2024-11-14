@@ -1,0 +1,52 @@
+kind: pipeline
+type: docker
+name: terragrunt-image
+
+steps:
+  - name: checkout
+    image: alpine/git
+    commands:
+      - git clone https://github.com/moabukar/terragrunt-image.git
+      - git checkout ${DRONE_COMMIT}
+
+  - name: login
+    image: docker
+    environment:
+      DOCKER_USERNAME:
+        from_secret: docker_username
+      DOCKER_PASSWORD:
+        from_secret: dockerhub_token
+    commands:
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+  - name: build-and-publish
+    image: docker
+    environment:
+      REGISTRY: moabukar
+    commands:
+      - sha=$(echo ${DRONE_COMMIT_SHA} | cut -c1-7)
+      - primary_tag="${REGISTRY}/terragrunt-image:${sha}"
+      
+      # Build and push image with commit SHA tag
+      - docker build -t $primary_tag -f Dockerfile .
+      - docker push $primary_tag
+
+      # Tag and push based on branch
+      - if [ "${DRONE_BRANCH}" = "main" ]; then
+          retention_tag="${REGISTRY}/terragrunt-image:latest";
+          docker tag $primary_tag $retention_tag;
+          docker push $retention_tag;
+        else
+          retention_tag="${REGISTRY}/terragrunt-image:${DRONE_BRANCH}-${sha}";
+          docker tag $primary_tag $retention_tag;
+          docker push $retention_tag;
+        fi
+
+trigger:
+  event:
+    - push
+  paths:
+    include:
+      - Dockerfile
+      - requirements.txt
+      - .drone.yml 
