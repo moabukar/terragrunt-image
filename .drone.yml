@@ -65,8 +65,7 @@ steps:
       auto_tag: true
       auto_tag_suffix: linux-arm64
       dockerfile: Dockerfile
-      registry:
-        from_secret: registry
+      registry: docker.io
       repo:
         from_secret: dockerhub_repo
       username:
