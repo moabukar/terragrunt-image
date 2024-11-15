@@ -64,15 +64,15 @@ steps:
     settings:
       auto_tag: true
       auto_tag_suffix: linux-arm64
-      dockerfile: docker/Dockerfile.linux.arm64
+      dockerfile: Dockerfile
       registry:
-        from_secret: image_registry
+        from_secret: registry
       repo:
-        from_secret: destination_image
+        from_secret: dockerhub_repo
       username:
         from_secret: docker_username
       password:
-        from_secret: docker_password
+        from_secret: dockerhub_password
     platform:
       arch: arm64
     when:
@@ -80,24 +80,3 @@ steps:
         - push
         - tag
 
-  - name: Build and Push (AMD64)
-    image: plugins/docker
-    pull: if-not-exists
-    settings:
-      auto_tag: true
-      auto_tag_suffix: linux-amd64
-      dockerfile: docker/Dockerfile.linux.amd64
-      registry:
-        from_secret: image_registry
-      repo:
-        from_secret: destination_image
-      username:
-        from_secret: docker_username
-      password:
-        from_secret: docker_password
-    platform:
-      arch: amd64
-    when:
-      event:
-        - push
-        - tag
