@@ -72,9 +72,8 @@ steps:
       username:
         from_secret: docker_username
       password:
-        from_secret: dockerhub_password
-    platform:
-      arch: arm64
+        from_secret: dockerhub_token
+      platform: linux/arm64
     when:
       event:
         - push
